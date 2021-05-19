@@ -3,14 +3,6 @@ import {Navbar} from 'react-bootstrap'
 import "../App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ReactLogo from '../logo.svg';
-import Upload from '../Upload';
-import App from '../App'
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link
-} from "react-router-dom";
 
 function Header () {
     return (
@@ -26,20 +18,6 @@ function Header () {
           />{' '}
           React Bootstrap
         </Navbar.Brand>
-        <Router>
-          <Link to="/">Login</Link>
-          &nbsp;&nbsp;&nbsp;
-          <Link to="/Upload">Upload</Link>
-          <Switch>
-          <Route exact path="/">
-            <App />
-          </Route>
-          <Route path="/Upload">
-            <Upload />
-          </Route>
-        </Switch>
-        </Router>
-        
       </Navbar>
       </>
       );

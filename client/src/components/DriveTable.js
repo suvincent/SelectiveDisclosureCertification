@@ -1,5 +1,5 @@
-import React, { Component , useState, useEffect } from "react";
-import {Navbar,Button,Table} from 'react-bootstrap'
+import React from "react";
+import {Button,Table} from 'react-bootstrap'
 
 function DriveTable(props){
   async function Getfile(fhash,fname,ftype){// without encryption
@@ -12,7 +12,7 @@ function DriveTable(props){
     link.click();
   }
     return(
-        <Table striped bordered hover size="sm" style = {{width :'70%',margin:"auto",marginTop : "1%"}}>
+        <Table striped bordered hover size="sm" style = {{width :'85%',margin:"auto",marginTop : "1%"}}>
           <thead>
             <tr>
               <th>#</th>
@@ -34,7 +34,7 @@ function DriveTable(props){
               <td width="18%">
               {(self[3])?
                 <>
-                <Button variant="info" content='Upload' onClick = {()=>{props.DecryptFile(self[5],self[4],self[0])}}>Decrypt it</Button>
+                <Button variant="info" content='Upload' onClick = {()=>{props.DecryptFile(self[5],self[4],self[0],self[1],self[2])}}>Decrypt it</Button>
                 &nbsp; &nbsp;
                 <Button variant="warning" content='Upload' onClick = {()=>{Getfile(self[0],self[1],self[2])}}>Get Raw</Button>
                 </>
