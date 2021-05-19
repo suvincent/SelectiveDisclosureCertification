@@ -68,7 +68,7 @@ function App (props) {
 // function OK
   async function UploadtoChainEncrypted(){
     // check if there is private key
-    if(!privatekey){// 55e0681bdac2a1b4751da654d5fd043afe847448fbb42ffa5517c752b8eecd35
+    if(!privatekey){
       alert('please enter your private key first')
       return;
     }
