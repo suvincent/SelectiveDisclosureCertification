@@ -1,6 +1,4 @@
-var SimpleStorage = artifacts.require("./SimpleStorage.sol");
-var Drvie = artifacts.require("./Drive.sol");
-
+var PD = artifacts.require("./pedersenCommitment.sol");
 module.exports = function(deployer) {
-  deployer.deploy(Drvie);
+  deployer.deploy(PD);
 };
