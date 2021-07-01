@@ -9,8 +9,10 @@ import PrivateKeyForm from '../components/privatekey'
 import DriveTable from '../components/DriveTable'
 import PDContract from "../contracts/PedersenCommitment.json";
 import row from "../model/row"
-
-
+import BootstrapSwitchButton from 'bootstrap-switch-button-react'
+const didJWT = require('did-jwt')
+const crypto = require('crypto'); 
+const J = require('dag-jose-utils')
 // import CryptoJS from "cryptojs"
 const CryptoJS = require("crypto-js")
 const privateKeyToPublicKey = require('ethereum-private-key-to-public-key')
@@ -27,7 +29,12 @@ function CreateCert (props) {
   const [Value,setValue] = useState("")
   // const [IPFSHash,setIPFSHash] = useState("QmVKRJ4jxxzqchoB3K4pLwmtJzBawN3GQdR4ZzwYYMJxPa");
   const [IPFSHash,setIPFSHash] = useState("");
+  const [address,setAddr] = useState("");
+  const [C_IPFSorDownload,setC_IPFSorDownload] = useState(true);
+  const [V_IPFSorDownload,setV_IPFSorDownload] = useState(true);
+  const [pubkey,setpubKey] = useState("")
 
+  const [result,setresult] = useState("")
   
   useEffect(()=>{
     async function fetchData(){
@@ -63,7 +70,7 @@ function CreateCert (props) {
   });
  
 // function OK
-  async function UploadtoChain(){// without encryption'
+  async function UploadtoChain(VerifyIsIPFS){// without encryption'
     
       if(uploadfile && contract){
           try{
@@ -72,7 +79,7 @@ function CreateCert (props) {
           let cid =await window["ipfsadd"](blob,true)
           console.log(cid.toString())
           setIPFSHash(cid.toString())
-          GenVerifyJson(cid.toString())
+          GenVerifyJson(cid.toString(),VerifyIsIPFS)
           }
           catch(err){
             console.log(err.message)
@@ -134,19 +141,27 @@ function CreateCert (props) {
 
   async function GenSigneture(){
     // global certificate part
+    if(!address){
+      alert("please fill in the receiver address")
+    }
     let SignatureMap = {}
     filelist.forEach(element => {
       let key = "0x"+ CryptoJS.SHA256(element.key+element.random).toString()
       SignatureMap[key] = element.Commitment
     });
-
-    let j = JSON.stringify(SignatureMap)
+    let SignObj = {
+      Certificate:SignatureMap,
+      Issuer_address:accounts[0],
+      Receiver_address:address
+    }
+    let j = JSON.stringify(SignObj)
     console.log(j)// 可以看看要不要hash??
     web3.eth.personal.sign(web3.utils.fromUtf8(j), accounts[0], (err,sig)=>{
           console.log(sig)
           let writeObj = {
             Certificate:SignatureMap,
             Issuer_address:accounts[0],
+            Receiver_address:address,
             Issuer_signature:sig
           }
           setuploadfile(writeObj)
@@ -160,10 +175,14 @@ function CreateCert (props) {
     link.download = 'Certificate.json';
     link.href = url;
     link.click();
-    GenVerifyJson("None")
   }
 
-  function GenVerifyJson(IPFS){
+  async function GenVerifyJson(IPFS,VerifyIsIPFS){
+      // 
+      if(!pubkey){
+        alert("please insert public key first!")
+        return
+      }
       // Verify List
       let VerifyList = []
       filelist.forEach(element => {
@@ -178,15 +197,78 @@ function CreateCert (props) {
         IPFSHash:IPFS,
         VerifyList:VerifyList
       }
-      const fileData2 = JSON.stringify(writeObj);
+      //encrypt JWT key
+      let key = crypto.randomBytes(32)
+      let VJwt =await encryptJWEFile(writeObj,key)
+      console.log(key.toString('Hex'))
+      const encrypted = await EthCrypto.encryptWithPublicKey(
+        pubkey, //receiver publicKey
+        key.toString('Hex') // message
+      )
+
+      //
+      let exportObj = {
+        jwt:VJwt,
+        decodeMessage:encrypted
+      }
+
+      const fileData2 = JSON.stringify(exportObj);
       const blob2 = new Blob([fileData2], {type: "text/plain"});
-      const url2 = URL.createObjectURL(blob2);
-      const link2 = document.createElement('a');
-      link2.download = 'Verify.json';
-      link2.href = url2;
-      link2.click();
+      if(VerifyIsIPFS){
+        let cid =await window["ipfsadd"](blob2,true)
+        console.log(cid)
+        setresult(cid)
+        alert("Verify has been published to IPFS,\n IPFS Hash is "+cid)
+      }
+      else{
+        const url2 = URL.createObjectURL(blob2);
+        const link2 = document.createElement('a');
+        link2.download = 'Verify.json';
+        link2.href = url2;
+        link2.click();
+      }
   }
 
+  function OnchangeInput(e){
+    setAddr(e.target.value)
+    // console.log(props.privatekey)
+  }
+  async function encryptJWEFile(payload,key){
+    let enc = didJWT.xc20pDirEncrypter(key);
+    let w = await J.prepareCleartext(payload)
+    let jwt = await didJWT.createJWE(w,[enc])
+    return jwt
+  }
+
+  async function GenCertificate(){
+    console.log(C_IPFSorDownload)
+    console.log(V_IPFSorDownload)
+    
+    // Verify
+    if(V_IPFSorDownload){//IPFS
+      // Certificate
+      if(C_IPFSorDownload){//IPFS
+          UploadtoChain(true)
+          // UPload Verifiy to chain
+      }
+      else{//Local
+        Download();
+        // 這個Gen 應該要
+        GenVerifyJson("None",false)
+      }
+    }
+    else{//Local
+      // Certificate
+      if(C_IPFSorDownload){//IPFS
+        UploadtoChain(false) 
+      }
+      else{//Local
+        Download();
+        GenVerifyJson("None",false)
+      }
+    }
+
+  }
 
   if (!web3) {
     return <div>Loading Web3, accounts, and contract...</div>;
@@ -201,6 +283,9 @@ function CreateCert (props) {
           <div className="App">
             <br/>
                   <h2>Certificate creation</h2>
+                  <h3 style={{color:"red"}}>
+                    School Mode
+                  </h3>
             <br/>
             <h4>add Certificate Column</h4>
             <Form>
@@ -225,17 +310,41 @@ function CreateCert (props) {
           </div>
           </Col>
           <Col xs lg="2">
+            <PrivateKeyForm Title={"Receiver publicKey Key"} privatekey={pubkey} setprivatekey={setpubKey} style={{ marginRight: 4 }}/>
+            <form className="Uploadform">
+              <label className="password">Receiver Address</label>
+              <Form.Control type="text" value={address} onChange={(e)=>{OnchangeInput(e)}}  placeholder="0x....."></Form.Control>
+            </form>
             <form className="Uploadform">
               <Container>
                   <Row>
                     <Col>
+                        <label className="password">Certificate Publish to IPFS(On)</label>
+                        <BootstrapSwitchButton checked={C_IPFSorDownload} onChange={()=>{setC_IPFSorDownload(!C_IPFSorDownload)}} onstyle="info" onlabel="IPFS" offlabel="Local" width="100"/>
+                        <br/>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col>
+                        <label className="password">Verify Publish to IPFS(On)</label>
+                        <BootstrapSwitchButton checked={V_IPFSorDownload} onChange={()=>{setV_IPFSorDownload(!V_IPFSorDownload)}} onstyle="info" onlabel="IPFS" offlabel="Local" width="100"/>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col>
+                      <br/>
+                      <Button variant="secondary" content='Upload' onClick = {GenCertificate}>Gen Certificate</Button>
+                      {(result)?"Verify JWE IPFS : "+result:""}
+                    </Col>
+                  
+                    {/* <Col>
                     <label className="password"> &nbsp;&nbsp;&nbsp;upload&nbsp;&nbsp;</label>
                     <a className="middle"><Button variant="secondary" content='Upload' onClick = {UploadtoChain}>Upload to IPFS</Button></a>
                     </Col>
                     <Col>
                     <label className="password"> &nbsp;&nbsp;&nbsp;Download&nbsp;&nbsp;</label>
                     <a className="middle"><Button variant="secondary" content='Upload' onClick = {Download}>DownLoad to Local</Button></a>
-                    </Col>
+                    </Col> */}
                   </Row>
                   <Row>
                     <Col>

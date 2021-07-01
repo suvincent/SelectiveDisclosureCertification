@@ -136,7 +136,7 @@ function App (props) {
             <Verify web3={web3}/>
           </Route>
           <Route path="/">
-            <Home />
+            <Home web3={web3}/>
           </Route>
         </Switch>
       </div>

@@ -22,8 +22,8 @@ function PrivateKeyForm(props){
     return(
         <>
         <form className="littleform">
-        <label className="password">Private Key
-        <input type={type} className="password__input" onChange={OnchangeInput} />
+        <label className="password">{props.Title}
+        <input type={type} className="password__input" value={props.privatekey} onChange={OnchangeInput} />
         <span className="password__show" onClick={showHide}>{type === 'input' ? 'Hide' : 'Show'}</span>
         </label>
         </form>
