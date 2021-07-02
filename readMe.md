@@ -5,37 +5,7 @@
 0xf07AceA1dB989df2236339D616338bEcB84a0600
 
 ## public url 
-https://suvincent.github.io/simpleIPFSDrive/
-
-## introduction
-Because IPFS is a free network storage space, as long as you know the hash value on the Internet, you can access the data at the nodes of the IPFS service. Therefore, I want to have a website that can record the IPFS hash, and with encryption function, so that individuals can upload and Have basic privacy
-
-## Design for contract and web app
-### functions
-* upload file
-* upload file encrypted
-* download file
-* decrypt and download file
-
-### user flow
-![](./docs/IPFSDrive.png)
-### button operation process
-* Upload file encrypt
-1.	check if there is private key filled in.
-2.	private key turn public key.
-3.	generate 256 bits key.
-4.	encrypt file by key and use AES CTR mode.
-5.	encrypt key by public key.
-6.	send file to IPFS.
-7.	send file metadata and encrypted key to Ethereum.
-
-* decrypt download file
-1.	check if there is private key filled in.
-2.	get file metadata and encrypted key from Ethereum.
-3.	Decrypt encrypted key by private key.
-4.	Get file from IPFS.
-5.	Decrypted encrypted file and use AES CTR mode.
-6.	Download the decrypted result.
+https://suvincent.github.io/SelectiveDisclosureCertification/
 
 ## Test for contract and web app
 * contract 

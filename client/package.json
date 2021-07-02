@@ -2,7 +2,7 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://suvincent.github.io/simpleIPFSDrive/",
+  "homepage": "https://suvincent.github.io/SelectiveDisclosureCertification/",
   "dependencies": {
     "bootstrap": "^4.6.0",
     "bootstrap-switch-button-react": "^1.2.0",

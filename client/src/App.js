@@ -112,15 +112,15 @@ function App (props) {
         </Navbar.Brand>
         <Nav>
             <Nav.Item>
-              <Link to="/" style={{color: "white"}}>Home</Link>
+              <Link to="/SelectiveDisclosureCertification/" style={{color: "white"}}>Home</Link>
             </Nav.Item>
             &nbsp;&nbsp;
             <Nav.Item>
-              <Link to="/about" style={{color: "white"}}>Create certificate</Link>
+              <Link to="/SelectiveDisclosureCertification/create" style={{color: "white"}}>Create certificate</Link>
             </Nav.Item>
             &nbsp;&nbsp;
             <Nav.Item>
-              <Link to="/users" style={{color: "white"}}>Verify Certificate</Link>
+              <Link to="/SelectiveDisclosureCertification/verify" style={{color: "white"}}>Verify Certificate</Link>
             </Nav.Item>
         </Nav>
       </Navbar>
@@ -129,13 +129,13 @@ function App (props) {
         {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
         <Switch>
-          <Route path="/about">
+          <Route path="/SelectiveDisclosureCertification/create">
             <CreateCert web3={web3}/>
           </Route>
-          <Route path="/users">
+          <Route path="/SelectiveDisclosureCertification/verify">
             <Verify web3={web3}/>
           </Route>
-          <Route path="/">
+          <Route path="/SelectiveDisclosureCertification/">
             <Home web3={web3}/>
           </Route>
         </Switch>
