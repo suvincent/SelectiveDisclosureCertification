@@ -7,6 +7,14 @@
 ## public url 
 https://suvincent.github.io/SelectiveDisclosureCertification/
 
+## website screen shot
+* home Page
+![](img/home.png)
+* create Page
+![](img/create.png)
+* verify Page
+![](img/Verify.png)
+
 ## Test for contract and web app
 * contract 
 ```
