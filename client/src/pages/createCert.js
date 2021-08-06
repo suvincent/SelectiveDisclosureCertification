@@ -1,5 +1,5 @@
 import React, { useState, useEffect} from "react";
-import getWeb3 from "../getWeb3";
+// import getWeb3 from "../getWeb3";
 import {Button,Container,Row,Col,Form} from 'react-bootstrap'
 import "../App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,15 +15,14 @@ const crypto = require('crypto');
 const J = require('dag-jose-utils')
 // import CryptoJS from "cryptojs"
 const CryptoJS = require("crypto-js")
-const privateKeyToPublicKey = require('ethereum-private-key-to-public-key')
 function CreateCert (props) {
   // const [storageValue ,setstorageValue] = useState(0)
-  const [web3,setweb3] = useState(props.web3)
+  const [web3,] = useState(props.web3)
   const [accounts,setaccount] = useState(null)
   const [contract,setcontract] = useState(null)
   const [uploadfile,setuploadfile] = useState(null)
   // const [privatekey,setprivatekey] = useState(null)
-  const [initflag,setinitflag] = useState(false);
+  // const [initflag,setinitflag] = useState(false);
   const [filelist,setfilelist] = useState([])
   const [Key,setKey] = useState("")
   const [Value,setValue] = useState("")
@@ -46,7 +45,7 @@ function CreateCert (props) {
         // Use web3 to get the user's accounts.
         if(!accounts)setaccount(await web3.eth.getAccounts());
         // Get the contract instance.
-        const networkId = await web3.eth.net.getId();
+        // const networkId = await web3.eth.net.getId();
         // console.log(networkId)
         // const deployedNetwork = PDContract.networks[networkId];
         if(!contract){
@@ -77,7 +76,7 @@ function CreateCert (props) {
           const fileData = JSON.stringify(uploadfile);
           const blob = new Blob([fileData], {type: "text/plain"});
           let cid =await window["ipfsadd"](blob,true)
-          console.log(cid.toString())
+          // console.log(cid.toString())
           setIPFSHash(cid.toString())
           GenVerifyJson(cid.toString(),VerifyIsIPFS)
           }
@@ -114,7 +113,7 @@ function CreateCert (props) {
        alert("value will be hashed")
        tempV ="0x"+ CryptoJS.SHA256(Value).toString();
     }
-    console.log(tempV)
+    // console.log(tempV)
     
     let random ="0x"+ generateHexString(58)
     // console.log(random)
@@ -130,7 +129,7 @@ function CreateCert (props) {
   async function GenPDCommitment(C_value,C_random){
       try{
         let result = await contract.methods.createCommitment(C_random,C_value).call();
-        console.log(result)
+        // console.log(result)
         return result
       }
       catch(e){
@@ -143,6 +142,7 @@ function CreateCert (props) {
     // global certificate part
     if(!address){
       alert("please fill in the receiver address")
+      return
     }
     let SignatureMap = {}
     filelist.forEach(element => {
@@ -155,9 +155,9 @@ function CreateCert (props) {
       Receiver_address:address
     }
     let j = JSON.stringify(SignObj)
-    console.log(j)// 可以看看要不要hash??
+    // console.log(j)// 可以看看要不要hash??
     web3.eth.personal.sign(web3.utils.fromUtf8(j), accounts[0], (err,sig)=>{
-          console.log(sig)
+          // console.log(sig)
           let writeObj = {
             Certificate:SignatureMap,
             Issuer_address:accounts[0],
@@ -200,7 +200,7 @@ function CreateCert (props) {
       //encrypt JWT key
       let key = crypto.randomBytes(32)
       let VJwt =await encryptJWEFile(writeObj,key)
-      console.log(key.toString('Hex'))
+      // console.log(key.toString('Hex'))
       const encrypted = await EthCrypto.encryptWithPublicKey(
         pubkey, //receiver publicKey
         key.toString('Hex') // message
@@ -216,7 +216,7 @@ function CreateCert (props) {
       const blob2 = new Blob([fileData2], {type: "text/plain"});
       if(VerifyIsIPFS){
         let cid =await window["ipfsadd"](blob2,true)
-        console.log(cid)
+        // console.log(cid)
         setresult(cid)
         alert("Verify has been published to IPFS,\n IPFS Hash is "+cid)
       }
@@ -241,8 +241,8 @@ function CreateCert (props) {
   }
 
   async function GenCertificate(){
-    console.log(C_IPFSorDownload)
-    console.log(V_IPFSorDownload)
+    // console.log(C_IPFSorDownload)
+    // console.log(V_IPFSorDownload)
     
     // Verify
     if(V_IPFSorDownload){//IPFS
@@ -348,7 +348,7 @@ function CreateCert (props) {
                   </Row>
                   <Row>
                     <Col>
-                      {(IPFSHash)?<a href={"https://ipfs.io/ipfs/"+IPFSHash} target="_blank" >View Raw Certificate</a>:""}
+                      {(IPFSHash)?<a href={"https://ipfs.io/ipfs/"+IPFSHash} target="_blank" rel="noreferrer">View Raw Certificate</a>:""}
                     </Col>
                   </Row>
               </Container>

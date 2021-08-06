@@ -1,19 +1,18 @@
 import React, { useState, useEffect} from "react";
-import getWeb3 from "../getWeb3";
+// import getWeb3 from "../getWeb3";
 import {Button,Container,Row,Col,Table,Form} from 'react-bootstrap'
 import "../App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import PDContract from "../contracts/PedersenCommitment.json";
-import Header from '../components/Header'
+import testAdd from '../test/ipfs'
+
 import bs58 from 'bs58'
 // import CryptoJS from "cryptojs"
-const CryptoJS = require("crypto-js")
 var Wallet = require('ethereumjs-wallet');
 var EthUtil = require('ethereumjs-util');
 const privateKeyToPublicKey = require('ethereum-private-key-to-public-key')
 const DidRegistryContract = require('ethr-did-registry')
 function Home (props) {
-    const [web3,setweb3] = useState(props.web3)
+    const [web3,] = useState(props.web3)
     const [accounts,setaccount] = useState(null)
     const [contract,setcontract] = useState(null)
     const [attibuteList,setAttr] = useState([])
@@ -33,7 +32,7 @@ function Home (props) {
           // Use web3 to get the user's accounts.
           if(!accounts)setaccount(await web3.eth.getAccounts());
           // Get the contract instance.
-          const networkId = await web3.eth.net.getId();
+          // const networkId = await web3.eth.net.getId();
           // console.log(networkId)
           // const deployedNetwork = PDContract.networks[networkId];
           if(!contract){
@@ -57,13 +56,13 @@ function Home (props) {
     });
 
     async function testReg(){
-      let result = await contract.methods.identityOwner(accounts[0]).call()
-      console.log(contract)
+      // let result = await contract.methods.identityOwner(accounts[0]).call()
+      // console.log(contract)
       const history = []
       let previousChange = await contract.methods.changed(accounts[0]).call()
       
       while (previousChange) {
-        if(previousChange == 0)break
+        if(previousChange === 0)break
           await contract.getPastEvents('DIDAttributeChanged', {
             filter: {id: [accounts[0]]},  
             fromBlock: previousChange,
@@ -84,19 +83,29 @@ function Home (props) {
             }})
       }
       setAttr(attibuteList => history)
-      console.log(history)
+      // console.log(history)
     }
 
     async function TurnRawtoReadable(){
-      if(attibuteList.length == 0){
+      if(attibuteList.length === 0){
         alert("please get raw history first!")
       }
       let newList = []
       attibuteList.forEach(async(row) => {
-        console.log(row.value)
+        // console.log(row.value)
         let cut = CutTailZero(row.name)
-        let nv = getIpfsHashFromBytes32(row.value);
-        console.log(nv)
+        let nv = row.value;
+        try{
+          // 如果長度 == hash => 轉hash to IPFS hash
+          if(nv.length === "0x3b0326dd6d55bc8100afc3e7f2e8b8626e917dc0ccbf96b7016785b42b9ce29e".length)
+            nv = getIpfsHashFromBytes32(row.value);
+          else // 轉乘ascii
+            nv=CutTailZero(row.value)
+        }
+        catch(err){
+          console.log(err.message)
+        }
+        // console.log(nv)
         let newrow = {
           name: cut,
           value:nv,
@@ -109,12 +118,33 @@ function Home (props) {
     }
 
     async function SetAttributes(){
-      let name = web3.utils.asciiToHex(Akey)//string to byte32
-      console.log(web3.utils.hexToAscii(name))
-      let value =await getBytes32FromIpfsHash(Avalue)
-      console.log(getIpfsHashFromBytes32(value))
-      console.log(name,value)
-      await contract.methods.setAttribute(accounts[0], name, value, "9999999").send({ from: accounts[0] });
+      try{
+        let name = web3.utils.asciiToHex(Akey)//string to byte32
+        // console.log(web3.utils.hexToAscii(name))
+        let value =await getBytes32FromIpfsHash(Avalue)
+        // console.log(getIpfsHashFromBytes32(value))
+        // console.log(name,value)
+        await contract.methods.setAttribute(accounts[0], name, value, "9999999").send({ from: accounts[0] });
+      }
+      catch(err){
+        console.log(err.message)
+        alert(err.message)
+      }
+    }
+
+    async function SetRaw(){
+      try{
+        let name = web3.utils.asciiToHex(Akey)//string to byte32
+        // console.log(web3.utils.hexToAscii(name))
+        let value =web3.utils.asciiToHex(Avalue)
+        // console.log(getIpfsHashFromBytes32(value))
+        // console.log(name,value)
+        await contract.methods.setAttribute(accounts[0], name, value, "9999999").send({ from: accounts[0] });
+      }
+      catch(err){
+        console.log(err.message)
+        alert(err.message)
+      }
     }
 
     async function getBytes32FromIpfsHash(ipfsListing) {
@@ -139,7 +169,7 @@ function Home (props) {
       }
       for (; i < l; i+=2) {
         var code = parseInt(hex.substr(i, 2), 16);
-        if(code != 0) {
+        if(code !== 0) {
           str += String.fromCharCode(code);
         }
       }
@@ -214,7 +244,7 @@ function Home (props) {
             
             <form className="Uploadform">
               <label className="password">PedersenCommitment Source Code</label>
-              <a href="https://ropsten.etherscan.io/address/0xf07AceA1dB989df2236339D616338bEcB84a0600#code" target="_blank">Source Code</a>
+              <a href="https://ropsten.etherscan.io/address/0xf07AceA1dB989df2236339D616338bEcB84a0600#code" target="_blank" rel="noreferrer">Source Code</a>
             </form>
             <form className="Uploadform">
               <label className="password">SetAttributes</label>
@@ -222,7 +252,10 @@ function Home (props) {
               <br/>
               <Form.Control type="text" onChange={OnchangeValue}  placeholder="insert Value"></Form.Control>
               <br/>
-              <Button variant="secondary" content='Upload' onClick = {SetAttributes}>SetAttributes</Button>
+              <Button variant="secondary" content='Upload' onClick = {SetAttributes}>Set IPFSHash to Attributes</Button>
+              <br/>
+              <br/>
+              <Button variant="secondary" content='Upload' onClick = {SetRaw}>Set raw value to Attributes</Button>
             </form>
             <form className="Uploadform">
               <label className="password">private Key

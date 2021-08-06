@@ -1,5 +1,5 @@
 import React, { useState, useEffect} from "react";
-import getWeb3 from "../getWeb3";
+// import getWeb3 from "../getWeb3";
 import EthCrypto from 'eth-crypto';
 
 import {Button,Container,Row,Col,Form,Table,Badge,Modal} from 'react-bootstrap'
@@ -7,7 +7,7 @@ import "../App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import PDContract from "../contracts/PedersenCommitment.json";
 import row from "../model/row"
-import NavbarCollapse from "react-bootstrap/esm/NavbarCollapse";
+import testAdd from '../test/ipfs'
 import PrivateKeyForm from '../components/privatekey'
 import BootstrapSwitchButton from 'bootstrap-switch-button-react'
 
@@ -16,9 +16,8 @@ const crypto = require('crypto');
 const J = require('dag-jose-utils')
 // import CryptoJS from "cryptojs"
 const CryptoJS = require("crypto-js")
-const privateKeyToPublicKey = require('ethereum-private-key-to-public-key')
 function Verify (props) {
-  const [web3,setweb3] = useState(props.web3)
+  const [web3,] = useState(props.web3)
   const [accounts,setaccount] = useState(null)
   const [contract,setcontract] = useState(null)
   const [Certificate,setCert] = useState(null)
@@ -28,13 +27,13 @@ function Verify (props) {
   const [CertCount,setCertCount] = useState(0)
   const [type,setType] = useState(0)
   const [show,setShow] = useState(false)
-  const [modalType,setModal] = useState(0)
+  // const [modalType,setModal] = useState(0)
   const [prikey,setpriKey] = useState("")
   const [pubkey,setpubKey] = useState("")
   const [V_IPFSorDownload,setV_IPFSorDownload] = useState(true);
   const [V_IPFSorUPload,setV_IPFSorUPload] = useState(false);
   const [V_IPFSHash,setV_IPFSHash] = useState("");
-  const [readObj,setReadObj] = useState(null)
+  // const [readObj,setReadObj] = useState(null)
   const [result,setresult] = useState("")
   
 
@@ -55,7 +54,7 @@ function Verify (props) {
         // Use web3 to get the user's accounts.
         if(!accounts)setaccount(await web3.eth.getAccounts());
         // Get the contract instance.
-        const networkId = await web3.eth.net.getId();
+        // const networkId = await web3.eth.net.getId();
         // console.log(networkId)
         // const deployedNetwork = PDContract.networks[networkId];
         if(!contract){
@@ -102,7 +101,7 @@ function Verify (props) {
     reader.onload =async function (event){
       try{
           var obj = JSON.parse(event.target.result);
-          setReadObj(obj)
+          // setReadObj(obj)
           ////////////////////////
           // decode the JWT's key
           const rkey = await EthCrypto.decryptWithPrivateKey(
@@ -119,7 +118,7 @@ function Verify (props) {
           ////////////////////////
           setVerify(Vlist)
           setVerifyCount(Object.keys(Vlist.VerifyList).length)
-          if(Vlist.IPFSHash == "None"){
+          if(Vlist.IPFSHash === "None"){
             setType(1)
           }
           else{
@@ -144,7 +143,7 @@ function Verify (props) {
     reader.onload =async (event) => {
       try{
         var obj = JSON.parse(event.target.result);
-        setReadObj(obj)
+        // setReadObj(obj)
         ////////////////////////
         // decode the JWT's key
         const rkey = await EthCrypto.decryptWithPrivateKey(
@@ -161,7 +160,7 @@ function Verify (props) {
         ////////////////////////
         setVerify(Vlist)
         setVerifyCount(Object.keys(Vlist.VerifyList).length)
-        if(Vlist.IPFSHash == "None"){
+        if(Vlist.IPFSHash === "None"){
           setType(1)
         }
         else{
@@ -186,11 +185,11 @@ function Verify (props) {
       let mapping = Certificate.Certificate
       let flag = true;
       Verify.VerifyList.forEach(async element => {
-        console.log(element)
+        // console.log(element)
         let key = "0x"+ CryptoJS.SHA256(element.key+element.random).toString()
-        console.log(mapping[key])
+        // console.log(mapping[key])
         let result = await VerifyCommitment(mapping[key],"0x"+ CryptoJS.SHA256(element.value).toString(),element.random)
-        console.log(result)
+        // console.log(result)
         if(result){
           var r = new row(element.key,element.value,element.random,mapping[key],typeof element.value);
           setfilelist( arr => [...arr, r]);
@@ -230,10 +229,10 @@ function Verify (props) {
     let VerStr = JSON.stringify(V_Certificate)
     web3.eth.personal.ecRecover(VerStr,Certificate.Issuer_signature)
     .then((addr)=>{
-      console.log(addr)
-      console.log(Certificate.Issuer_address)
+      // console.log(addr)
+      // console.log(Certificate.Issuer_address)
       if(addr === Certificate.Issuer_address.toLowerCase()){
-        console.log(Certificate.Issuer_address)
+        // console.log(Certificate.Issuer_address)
         alert('Certificate Issuer : '+Certificate.Issuer_address +"\n"
              +'Certificate Signature : '+Certificate.Issuer_signature +"\n"
              +'Status : Pass')
@@ -244,7 +243,7 @@ function Verify (props) {
   }
 
   function handleCheckBox(position){
-    console.log(position)
+    // console.log(position)
     if(position > -1){
     // let obj = filelist.indexOf(position)
     // obj.share = !obj.share
@@ -259,7 +258,7 @@ function Verify (props) {
     }
     );
     setfilelist(Updatelist)
-    console.log(filelist)
+    // console.log(filelist)
     }
   }
 
@@ -285,7 +284,7 @@ function Verify (props) {
     //encrypt JWT key
     let key = crypto.randomBytes(32)
     let VJwt =await encryptJWEFile(writeObj,key)
-    console.log(key.toString('Hex'))
+    // console.log(key.toString('Hex'))
     const encrypted = await EthCrypto.encryptWithPublicKey(
       pubkey, //receiver publicKey
       key.toString('Hex') // message
@@ -301,7 +300,7 @@ function Verify (props) {
     
       if(V_IPFSorDownload){
         let cid =await window["ipfsadd"](blob2,true)
-        console.log(cid)
+        // console.log(cid)
         setresult(cid)
         alert("Verify has been published to IPFS,\n IPFS Hash is "+cid)
       }
@@ -325,9 +324,9 @@ function Verify (props) {
     
     var reader = new FileReader();
     reader.onload = (event) => {
-      console.log(event.target.result);
+      // console.log(event.target.result);
       var obj = JSON.parse(event.target.result);
-      console.log(obj)
+      // console.log(obj)
       setCert(obj)
       setCertCount(Object.keys(obj.Certificate).length)
     };
@@ -351,7 +350,7 @@ function Verify (props) {
       // console.log(sig)
       web3.eth.personal.ecRecover(`I am going to prove myself, one-time nonce: ${nonce}`,sig)
       .then((addr)=>{
-        console.log(addr)
+        // console.log(addr)
         if(addr === Certificate.Receiver_address.toLowerCase()){
            alert('the signer address is equal to receiver!')
           //  history.push('/Upload')
@@ -441,7 +440,7 @@ function Verify (props) {
                 <td>{self.value}</td>
                 {/* hash */}
                 <td width="35%">
-                  {console.log(index)}
+                  {/* {console.log(index)} */}
                   <Form.Check type="checkbox" checked={self.share} label="Allow to Share" onChange={()=>{handleCheckBox(index)}} /></td>
               </tr>)}
             </tbody>
@@ -468,7 +467,7 @@ function Verify (props) {
                 </>
               }
             </form>
-            {(type == 0)?<></>:
+            {(type === 0)?<></>:
             <form className="Uploadform">
             <Container>
               <Row>
@@ -487,12 +486,12 @@ function Verify (props) {
             <form className="Uploadform">
               <label className="password">File Status</label>
               Certificate:&nbsp;{(Certificate)? <Badge variant="success">Load Success</Badge>:<Badge variant="danger">No file</Badge>}
-              &nbsp;{(Verify)?<a href={"https://ipfs.io/ipfs/"+Verify.IPFSHash} target="_blank" >View Raw</a>:""}
+              &nbsp;{(Verify)?<a href={"https://ipfs.io/ipfs/"+Verify.IPFSHash} target="_blank" rel="noreferrer" >View Raw</a>:""}
               <br/>
               Verification:&nbsp;{(Verify)?<Badge variant="success">Load Success</Badge>:<Badge variant="danger">No file</Badge>}
               &nbsp;{(Verify)?<a href="javascript:void(0)" onClick={openRawVerifyfile}>View Raw</a>:""}
               <br/>
-              &nbsp;{(Verify)?<a href={"https://ipfs.io/ipfs/"+V_IPFSHash} target="_blank" >View Raw JWT</a>:""}
+              &nbsp;{(Verify)?<a href={"https://ipfs.io/ipfs/"+V_IPFSHash} target="_blank" rel="noreferrer" >View Raw JWT</a>:""}
             </form>
             <form className="Uploadform">
               <label className="password">Functions</label>
