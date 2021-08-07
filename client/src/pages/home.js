@@ -60,9 +60,9 @@ function Home (props) {
       // console.log(contract)
       const history = []
       let previousChange = await contract.methods.changed(accounts[0]).call()
-      
+      // console.log(typeof(previousChange))
       while (previousChange) {
-        if(previousChange === 0)break
+        if(previousChange === "0")break
           await contract.getPastEvents('DIDAttributeChanged', {
             filter: {id: [accounts[0]]},  
             fromBlock: previousChange,
