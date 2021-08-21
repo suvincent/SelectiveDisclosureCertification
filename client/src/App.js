@@ -1,4 +1,4 @@
-import React, { useState} from "react";
+import React, { useState,useEffect} from "react";
 
 import {
   BrowserRouter as Router,
@@ -27,6 +27,18 @@ import CreateCert from './pages/createCert'
 function App () {
   const [web3,setweb3] = useState(null)
 
+  useEffect(() => {
+    return () => {
+
+      window.addEventListener("beforeunload", (ev) => 
+      {  
+          // ev.preventDefault();
+          window.provider.disconnect();
+          // return ev.returnValue = 'wallet has disconnected';
+      });
+   }
+   
+  });
 
 
   async function defaultinit(){
