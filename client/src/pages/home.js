@@ -212,6 +212,7 @@ function Home (props) {
                   <h2>Home</h2>
             <br/>
             <h4>uPort Registry</h4>
+            <h4>current account : {(accounts)?accounts[0]:""}</h4>
             <br/>
             <Button variant="secondary" content='Upload' onClick = {testReg}>Get raw Attributes</Button>
             &nbsp;

@@ -20,6 +20,7 @@ import testAdd from './test/ipfs'
 import Home from './pages/home'
 import Verify from './pages/verify'
 import CreateCert from './pages/createCert'
+import Contact from "./pages/contact";
 // import CryptoJS from "cryptojs"
 // const CryptoJS = require("crypto-js")
 // const privateKeyToPublicKey = require('ethereum-private-key-to-public-key')
@@ -36,16 +37,16 @@ function App () {
           window.provider.disconnect();
           // return ev.returnValue = 'wallet has disconnected';
       });
-   }
+    }
    
   });
 
 
   async function defaultinit(){
     try{
-    const a = await getWeb3();
-    console.log(a)
-    setweb3(a)
+      const a = await getWeb3();
+      console.log(a)
+      setweb3(a)
     }
     catch(err){
       console.log(err.message)
@@ -54,9 +55,9 @@ function App () {
   
   async function walletinit(){
     try{
-    const web3 = await walletconnectinit();
-    console.log(web3)
-    setweb3(web3)
+      const web3 = await walletconnectinit();
+      console.log(web3)
+      setweb3(web3)
     }
     catch(err){
       console.log(err.message)
@@ -116,6 +117,10 @@ function App () {
             <Nav.Item>
               <Link to="/SelectiveDisclosureCertification/verify" style={{color: "white"}}>Verify Certificate</Link>
             </Nav.Item>
+            &nbsp;&nbsp;
+            <Nav.Item>
+              <Link to="/SelectiveDisclosureCertification/contact" style={{color: "white"}}>Contact identity</Link>
+            </Nav.Item>
         </Nav>
       </Navbar>
         
@@ -128,6 +133,9 @@ function App () {
           </Route>
           <Route path="/SelectiveDisclosureCertification/verify">
             <Verify web3={web3}/>
+          </Route>
+          <Route path="/SelectiveDisclosureCertification/contact">
+            <Contact web3={web3}/>
           </Route>
           <Route path="/SelectiveDisclosureCertification/">
             <Home web3={web3}/>
