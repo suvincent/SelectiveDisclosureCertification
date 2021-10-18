@@ -16,6 +16,9 @@ contract PedersenCommitment{
       uint256 public constant BB = 7;
       uint256 public constant PP = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
       
+      // Modulus for private keys (sub-group)
+    uint constant nn = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+    
       // Expects random factor 'r' and commitment 'b'. Generators are hard-coded into this contract.
     function createCommitment(uint r, uint b)public pure returns (uint[2] memory c_affine){
       uint[2] memory bG;
@@ -32,7 +35,7 @@ contract PedersenCommitment{
 
       return c_affine;
     }
-
+    
     // We need to re-create the commitment and check that it matches c.
     function openCommitment(uint[2] memory c, uint r, uint b)public pure returns (bool) {
 
@@ -44,6 +47,50 @@ contract PedersenCommitment{
       }
 
       return false;
+    }
+    
+    function createZ(bytes32 c, bytes32 m, uint r)public pure returns (uint z){
+        return addmod(mulmod(uint(c),uint(m),nn),r,nn);
+        // return uint(c)*uint(m) + r;
+    }
+    
+    function hashall(uint[2] memory c1,uint[2] memory c2,uint[2] memory c3,uint[2] memory c4)public pure returns (bytes32 result){
+        return keccak256(abi.encodePacked(c1,c2,c3,c4));
+    }
+    
+    function CommitmentEqualityProof(uint[2] memory c1,uint[2] memory c2,uint[2] memory c3,uint[2] memory c4,uint z1,uint z2,uint z3)public payable returns(bool){
+        // get (C1,C2,C3,C4,z1,z2,z3)
+        // c = hash(C1,C2,C3,C4)
+        // check if
+        bytes32 c = hashall(c1,c2,c3,c4);
+        // C3 + c*C1 ?= z1*G + z2*H
+        // C3 + c*C1 => P1 , z1*G + z2*H => P2
+        bool check1 = checkSame(c1,c3,uint(c),z1,z2);
+        require(check1,"C3 + c*C1 != z1*G + z2*H");
+        // C4 + c*C2 ?= z1*G + z3*H
+        // C4 + c*C2 => P3 , z1*G + z3*H => P4
+        bool check2 = checkSame(c2,c4,uint(c),z1,z3);
+        require(check2,"C4 + c*C2 != z1*G + z3*H");
+        return true;
+    }
+    
+    function checkSame(uint[2] memory c1,uint[2] memory c3,uint c, uint z1,uint z2)public pure returns(bool){
+        uint[2] memory p1 = createCheckFromCommitment(c1,c3,uint(c));
+        uint[2] memory p2 = createCommitment(z1,z2);
+        if(p1[0] == p2[0] && p1[1] == p2[1]){
+            return true;
+        }
+        return false;
+    }
+    
+    // C3 + c*C1 => P1 
+    function createCheckFromCommitment(uint[2] memory c1,uint[2] memory c3, uint scalar)public pure returns(uint[2] memory result){
+        uint[2] memory p1;
+        // c * c1
+        (p1[0],p1[1]) = EllipticCurve.ecMul(scalar,c1[0],c1[1],AA,PP);
+        // C3 + c*C1 => P1 
+        (result[0],result[1]) = EllipticCurve.ecAdd(c3[0],c3[1],p1[0],p1[1],AA,PP);
+        require(EllipticCurve.isOnCurve(result[0],result[1],AA,BB,PP),"Must be on the curve!");
     }
     
 }
