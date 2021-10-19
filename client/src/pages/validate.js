@@ -16,7 +16,7 @@ const crypto = require('crypto');
 const J = require('dag-jose-utils')
 // import CryptoJS from "cryptojs"
 const CryptoJS = require("crypto-js")
-function Verify(props) {
+function Validate(props) {
   const [web3,] = useState(props.web3)
   const [accounts, setaccount] = useState(null)
   const [contract, setcontract] = useState(null)
@@ -410,7 +410,7 @@ function Verify(props) {
           <Col sm={9}>
             <div className="App">
               <br />
-              <h2>Selective Disclosure and zkp generation</h2>
+              <h2>Validate Voters</h2>
               <br />
               <h4>Verify Keys : TotalKeys = {VerifyCount} : {CertCount}</h4>
               <Form>
@@ -542,4 +542,4 @@ function Verify(props) {
   );
 }
 
-export default Verify;
+export default Validate;

@@ -20,7 +20,7 @@ import testAdd from './test/ipfs'
 import Home from './pages/home'
 import Verify from './pages/verify'
 import CreateCert from './pages/createCert'
-import Contact from "./pages/contact";
+import Validate from "./pages/validate";
 // import CryptoJS from "cryptojs"
 // const CryptoJS = require("crypto-js")
 // const privateKeyToPublicKey = require('ethereum-private-key-to-public-key')
@@ -115,11 +115,11 @@ function App () {
             </Nav.Item>
             &nbsp;&nbsp;
             <Nav.Item>
-              <Link to="/SelectiveDisclosureCertification/verify" style={{color: "white"}}>Verify Certificate</Link>
+              <Link to="/SelectiveDisclosureCertification/verify" style={{color: "white"}}>Verifiable Credentials</Link>
             </Nav.Item>
             &nbsp;&nbsp;
             <Nav.Item>
-              <Link to="/SelectiveDisclosureCertification/contact" style={{color: "white"}}>Contact identity</Link>
+              <Link to="/SelectiveDisclosureCertification/validate" style={{color: "white"}}>Validate</Link>
             </Nav.Item>
         </Nav>
       </Navbar>
@@ -134,8 +134,8 @@ function App () {
           <Route path="/SelectiveDisclosureCertification/verify">
             <Verify web3={web3}/>
           </Route>
-          <Route path="/SelectiveDisclosureCertification/contact">
-            <Contact web3={web3}/>
+          <Route path="/SelectiveDisclosureCertification/validate">
+            <Validate web3={web3}/>
           </Route>
           <Route path="/SelectiveDisclosureCertification/">
             <Home web3={web3}/>

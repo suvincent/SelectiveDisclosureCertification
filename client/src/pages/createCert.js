@@ -52,8 +52,8 @@ function CreateCert (props) {
           let i = new web3.eth.Contract(
             PDContract.abi,
             // deployedNetwork && deployedNetwork.address,
-            "0xf07AceA1dB989df2236339D616338bEcB84a0600"
-          );// 0x4CF247a90956185559EE5fb2A9A7E8dDd8A8E985 Drive address
+            "0xF944e6B6164a331134375b8dBAe6D33ACcfCfcc1" // pedersen commitment with ZKP contract
+          );
           
           setcontract(i)
         }
@@ -110,8 +110,8 @@ function CreateCert (props) {
     }
     let tempV = Value
     if(typeof Value != 'number'){
-       alert("value will be hashed")
-       tempV ="0x"+ CryptoJS.SHA256(Value).toString();
+      //  alert("value will be hashed")
+       tempV ="0x"+ CryptoJS.SHA256(Key+":"+Value).toString();
     }
     // console.log(tempV)
     
@@ -146,11 +146,13 @@ function CreateCert (props) {
     }
     let SignatureMap = {}
     filelist.forEach(element => {
-      let key = "0x"+ CryptoJS.SHA256(element.key+element.random).toString()
+      let key = "0x"+ CryptoJS.SHA256(element.key).toString()
       SignatureMap[key] = element.Commitment
     });
+    let signDate = (new Date()).getTime()
     let SignObj = {
       Certificate:SignatureMap,
+      SignDate:signDate,
       Issuer_address:accounts[0],
       Receiver_address:address
     }
@@ -160,6 +162,7 @@ function CreateCert (props) {
           // console.log(sig)
           let writeObj = {
             Certificate:SignatureMap,
+            SignDate:signDate,
             Issuer_address:accounts[0],
             Receiver_address:address,
             Issuer_signature:sig
@@ -270,6 +273,54 @@ function CreateCert (props) {
 
   }
 
+  ////////////////////////////
+  // cheat button
+  async function AddColumn_auto(k,v){
+    let tempV = v
+    if(typeof v != 'number'){
+      //  alert("value will be hashed")
+       tempV ="0x"+ CryptoJS.SHA256(k+":"+v).toString();
+    }
+    // console.log(tempV)
+    
+    let random ="0x"+ generateHexString(58)
+    // console.log(random)
+    let commitment = await GenPDCommitment(tempV,random);
+    // setfilelist(filelist.push(r))
+    // await VerifyCommitment(Value,"38843084404664773737811034719809089006355033921160053724844404266166110833973");
+    var r = new row(k,v,random,commitment,typeof v);
+    setfilelist( arr => [...arr, r]);
+  }
+  async function ID_CheatButton(){
+    setfilelist([])
+    await AddColumn_auto("idNum","V123456789");
+    await AddColumn_auto("nationality","R.O.C");
+    await AddColumn_auto("name","Demo Voter");
+    await AddColumn_auto("birthdate","1000/1/1");
+  }
+  async function School_CheatButton(){
+    setfilelist([])
+    await AddColumn_auto("schoolName","XXX university");
+    await AddColumn_auto("department","ISA");
+    await AddColumn_auto("graduated","not");
+    await AddColumn_auto("average score","C");
+    await AddColumn_auto("name","Demo Voter");
+  }
+  async function Company_CheatButton(){
+    setfilelist([])
+    await AddColumn_auto("CompanyName","SCK tech");
+    await AddColumn_auto("position","clean bathroom");
+    await AddColumn_auto("MonthlySalary","100K");
+    await AddColumn_auto("name","Demo Voter");
+  }
+
+  async function Receiver_CheatButton(){
+    // A student config
+    setpubKey("04e18dedaf2a099359f558b7b33c2016a374cd03ed2cf82ab46c4ec469ed920eaee86b92d44fdff6244e38204b8df27143eb5a6df671aa96d7bea1d3c9839534a8")
+    setAddr("0x21E6fe722e6FdF6fFb907A0cA873dDef779E997F")
+  }
+  ////////////////////////////
+
   if (!web3) {
     return <div>Loading Web3, accounts, and contract...</div>;
   }
@@ -283,9 +334,9 @@ function CreateCert (props) {
           <div className="App">
             <br/>
                   <h2>Certificate creation</h2>
-                  <h3 style={{color:"red"}}>
+                  {/* <h3 style={{color:"red"}}>
                     School Mode
-                  </h3>
+                  </h3> */}
             <br/>
             <h4>add Certificate Column</h4>
             <Form>
@@ -299,9 +350,29 @@ function CreateCert (props) {
                     </Col>
                     <Col xs={1}>
                       <Button variant="secondary" content='Upload' onClick = {AddColumn}><i className="fas fa-plus"></i></Button>
+                      &nbsp;
+                      <Button variant="secondary" content='Upload' onClick = {()=>{setfilelist([])}}><i className="fas fa-trash"></i></Button>
                     </Col>
                     <Col xs={2}>
                       <Button variant="secondary" content='Upload' onClick = {GenSigneture}>Gen Signature</Button>
+                    </Col>
+                    <Col></Col>
+                </Form.Row>
+                
+                <Form.Row>&nbsp;</Form.Row>
+                <Form.Row>
+                    <Col></Col>
+                    <Col xs={2}>
+                    <Button variant="secondary" content='Upload' onClick = {ID_CheatButton}>ID-CheatButton</Button>
+                    </Col>
+                    <Col xs={2}>
+                    <Button variant="secondary" content='Upload' onClick = {School_CheatButton}>School-CheatButton</Button>
+                    </Col>
+                    <Col xs={2}>
+                    <Button variant="secondary" content='Upload' onClick = {Company_CheatButton}>Company-CheatButton</Button>
+                    </Col>
+                    <Col xs={2}>
+                    <Button variant="secondary" content='Upload' onClick = {Receiver_CheatButton}>Receiver-CheatButton</Button>
                     </Col>
                     <Col></Col>
                 </Form.Row>
@@ -333,7 +404,7 @@ function CreateCert (props) {
                   <Row>
                     <Col>
                       <br/>
-                      <Button variant="secondary" content='Upload' onClick = {GenCertificate}>Gen Certificate</Button>
+                      <Button variant="secondary" content='Upload' onClick = {GenCertificate}>Get Verifiable Credentials</Button>
                       {(result)?"Verify JWE IPFS : "+result:""}
                     </Col>
                   
