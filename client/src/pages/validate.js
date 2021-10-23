@@ -12,6 +12,7 @@ import zkpClass from '../model/zkp'
 import testAdd from '../test/ipfs'
 import PrivateKeyForm from '../components/privatekey'
 import BootstrapSwitchButton from 'bootstrap-switch-button-react'
+import bs58 from 'bs58'
 
 const didJWT = require('did-jwt')
 const crypto = require('crypto');
@@ -27,6 +28,7 @@ function Validate(props) {
   const [Verify, setVerify] = useState(null)
   const [filelist, setfilelist] = useState([])
   const [rules, setrules] = useState([])
+  const [ValidList, setValidList] = useState([])
   const [VerifyCount, setVerifyCount] = useState(0)
   const [CertCount, setCertCount] = useState(0)
   const [type, setType] = useState(0)
@@ -73,14 +75,14 @@ function Validate(props) {
           let i = new web3.eth.Contract(
             ValidateContract.abi,
             // deployedNetwork && deployedNetwork.address,
-            "0x87fd310B48B877F64a143066b7e3574AF3086e25"
+            "0x1570518984b9e5977FD23f36A4fC64747C4ba21f"
           );// 0x4CF247a90956185559EE5fb2A9A7E8dDd8A8E985 Drive address
 
           setvcontract(i)
-        }else{
+        } else {
           getRuleList()
         }
-        
+
       } catch (error) {
         // Catch any errors for any of the above operations.
         alert(
@@ -90,87 +92,129 @@ function Validate(props) {
       }
     }
     fetchData()//.then(runExample())
-  },[vcontract]);
+  }, [vcontract]);
 
   /////////////////////////
   // function for validate
-  async function getRuleList(){
+
+  async function allValidUsers(){
+    try{
+      setValidList([])
+      let list = await vcontract.methods.viewValidList().call()
+      setValidList(ValidList =>[...ValidList, list])
+    }catch(e){
+      console.log(e.message)
+    }
+  }
+  async function getRuleList() {
     setrules([])
     let list = await vcontract.methods.viewRuleKeyList().call()
-    list.forEach(async (item)=>{
+    list.forEach(async (item) => {
       let c = await vcontract.methods.viewRuleCommitment(item).call();
-      let aa = await vcontract.methods.viewRuleAA(item).call();
+      // let aa = await vcontract.methods.viewRuleAA(item).call();
+      let r = await vcontract.methods.viewRuleR(item).call();
+      r = "0x000000"+r.substring(2,60);
       let unit = {
-        keyhash:item,
-        commitment:c,
-        AA:aa
+        keyhash: item,
+        Commitment: c,
+        random: r
       }
-      setrules(rules => [...rules,unit])
+      setrules(rules => [...rules, unit])
     })
   }
 
-  async function setRule(){
+  async function setRule() {
     // department ISA
     let k = '0x2ad29f65743a0524d916bfb3e24f5034c970b8daa7749699a88bd7096129fa09'
-    // let v =  ['93893333498284964916663551760241003010973516130047008545734383195150556334586', '10212880543627124451263322212501609168127783391104343410317611617970773674950'] 
-    let v = ['0x31eb8384f1d5654e48e14ff5e7828be2cb5838713355a37a414f666f417a825f', '0x8965fe515c72bdcaa3d47d24f736f83d70e95b91a51084166fcb208a7310ceda']
-    try{
-      await vcontract.methods.setValidateRule(k,v,"0x097F783e11482f5d05753c9619424171E8E8B3f6").send({ from: accounts[0] });
+    let r = "0x644c34d5409c4cab8f5147f638709c15bcd106690d26455edb3e72176d"
+    let v = ['0xb26c324746dc8c34ebe66a329470d292c3afafa9673c2967204f4c74e22f1516', '0xb3e7d82ac54c35efb0964a6a218e36c0732a8aa22ecf7f57a679ada829e61383']
+    try {
+      await vcontract.methods.setValidateRule(k, v, "0x097F783e11482f5d05753c9619424171E8E8B3f6", r).send({ from: accounts[0] });
     }
-    catch(e){
+    catch (e) {
       console.log(e.message)
     }
-    
+
   }
 
-  function containsRule(keyhash){
+  function containsRule(keyhash) {
     let flag = false;
-    rules.forEach((item)=>{
-      // console.log(item)
-      // console.log(keyhash)
-      if(item.keyhash == keyhash && !flag){
+    rules.forEach((item) => {
+      if (item.keyhash == keyhash && !flag) {
         flag = true;
       }
     })
     return flag
   }
 
-  function findRule(keyhash){
-    let flag = false;
-    rules.forEach((item)=>{
-      // console.log(item)
-      // console.log(keyhash)
-      if(item.keyhash == keyhash && !flag){
-        flag = item.commitment;
+  function findRule(keyhash) {
+    let flag = undefined;
+    rules.forEach((item) => {
+      if (item.keyhash == keyhash && !flag) {
+        flag = item;
       }
     })
     return flag
   }
+
 
   function generateHexString(length) {
     var ret = "";
     while (ret.length < length) {
       ret += Math.random().toString(16).substring(2);
     }
-    return ret.substring(0,length);
+    return ret.substring(0, length);
   }
 
-  async function GenZKP(keyhash,c2,m,r1,r2){
-    let c1 = findRule(keyhash);
-    let r3 ="0x"+ generateHexString(58)
-    let r4 ="0x"+ generateHexString(58)
-    let r5 ="0x"+ generateHexString(58)
-    try{
-      let c3 = await contract.methods.createCommitment(r3,r4).call();
-      let c4 = await contract.methods.createCommitment(r3,r5).call();
-      let c  = await contract.methods.hashall(c1,c2,c3,c4).call();
-      let z1 = await contract.methods.createZ(c,m,r3);
-      let z2 = await contract.methods.createZ(c,r1,r4);
-      let z3 = await contract.methods.createZ(c,r2,r5);
-      let zkp = new zkpClass(c1,c2,c3,c4,c,z1,z2,z3)
-      console.log(zkp)
+  async function GenZKP(c2) {
+    let c1 = findRule("0x" + CryptoJS.SHA256(c2.key).toString());
+    let r3 = "0x" + generateHexString(58)
+    let r4 = "0x" + generateHexString(58)
+    let r5 = "0x" + generateHexString(58)
+    let m = "0x" + CryptoJS.SHA256(c2.key + ":" + c2.value).toString();
+    let c2_random_tobyte32 = "0x000000"+c2.random.substring(2,60)
+    try {
+      let c3 = await contract.methods.createCommitment(r3, r4).call();
+      let c4 = await contract.methods.createCommitment(r3, r5).call();
+      let c  = await contract.methods.hashall(c1.Commitment, c2.Commitment, c3, c4).call();
+      let z1 = await contract.methods.createZ(c, m, r3).call();
+      let z2 = await contract.methods.createZ(c, c1.random, r4).call();
+      let z3 = await contract.methods.createZ(c, c2_random_tobyte32, r5).call();
+      let zkp = new zkpClass(c1.Commitment, c2.Commitment, c3, c4, c, z1, z2, z3, m,"0x" + CryptoJS.SHA256(c2.key).toString())
       setzkp(zkp);
       setShow(true)
+
+    } catch (e) {
+      console.log(e.message)
+    }
+  }
+
+  async function CheckZKP(){
+    
+    let result1 = await contract.methods.checkSame(zkp.c1,zkp.c3,zkp.c,zkp.z1,zkp.z2).call();
+    let result2 = await contract.methods.checkSame(zkp.c2,zkp.c4,zkp.c,zkp.z1,zkp.z3).call();
+    if(result1 && result2){
+      return true
+    }
+    else
+      return false
+  }
+
+  async function uploadZKP(){
+    let check = await CheckZKP();
+    if(!check){
+      alert("ZKP fail, please generate again")
+      return
+    }
+    if(Certificate.Receiver_address != accounts[0]){
+      alert("the account address is not equal to receiver")
+      return
+    }
+    try{
+      // bytes32 keyhash,uint[2] memory c2,uint[2] memory c3,uint[2] memory c4,uint z1,uint z2,uint z3,bytes32 vc
+      let vc = "0x"+bs58.decode(Verify.IPFSHash).slice(2).toString('hex')
+      console.log(vc)
+      await vcontract.methods.validateOneAttribute(zkp.keyhash,zkp.c2,zkp.c3,zkp.c4,zkp.z1,zkp.z2,zkp.z3,vc).send({ from: accounts[0] })
     }catch(e){
       console.log(e.message)
     }
@@ -287,12 +331,12 @@ function Validate(props) {
       // console.log(element)
       let key = "0x" + CryptoJS.SHA256(element.key).toString()
       // console.log(mapping[key])
-      // console.log(key)
+      console.log(element)
       let result = await VerifyCommitment(mapping[key], "0x" + CryptoJS.SHA256(element.key + ":" + element.value).toString(), element.random)
-      // console.log(result)
+      console.log(result)
       if (result) {
-        let share = containsRule(key)?true:false;
-        var r = new row(element.key, element.value, element.random, mapping[key], typeof element.value,share);
+        let share = containsRule(key) ? true : false;
+        var r = new row(element.key, element.value, element.random, mapping[key], typeof element.value, share);
         setfilelist(arr => [...arr, r]);
       }
       else {
@@ -308,46 +352,13 @@ function Validate(props) {
   }
   async function VerifyCommitment(Commitment, C_value, C_random) {
     try {
-      let v = await contract.methods.openCommitment(Commitment, C_random, C_value).call();
+      let v = await contract.methods.openCommitment(Commitment, C_value, C_random).call();
       return v
     }
     catch (e) {
       console.log(e)
       return false
     }
-  }
-
-  function CheckSignature() {
-    if (!Certificate) {
-      alert("please upload Certificate first")
-      return;
-    }
-    let V_Certificate = {
-      Certificate: Certificate.Certificate,
-      SignDate: Certificate.SignDate,
-      Issuer_address: Certificate.Issuer_address,
-      Receiver_address: Certificate.Receiver_address
-    }
-    let VerStr = JSON.stringify(V_Certificate)
-    web3.eth.personal.ecRecover(VerStr, Certificate.Issuer_signature)
-      .then((addr) => {
-        // console.log(addr)
-        // console.log(Certificate.Issuer_address)
-        if (addr === Certificate.Issuer_address.toLowerCase()) {
-          // console.log(Certificate.Issuer_address)
-          alert('Certificate Issuer : ' + Certificate.Issuer_address + "\n"
-            + 'Certificate Signature : ' + Certificate.Issuer_signature + "\n"
-            + 'Status : Pass' + "\n"
-            + 'whole content is match with signature')
-          //  history.push('/Upload')
-
-        }
-        else {
-          alert('Certificate Issuer : ' + Certificate.Issuer_address + "\n"
-            + 'Certificate Signature : ' + Certificate.Issuer_signature + "\n"
-            + 'Status : Fail')
-        }
-      })
   }
 
   function handleCheckBox(position) {
@@ -370,62 +381,6 @@ function Validate(props) {
     }
   }
 
-  async function GenSelectiveVerification() {
-    // Verify List
-    let VerifyList = []
-    filelist.forEach(element => {
-      if (element.share) {
-        let item = {
-          key: element.key,
-          value: element.value,
-          random: element.random
-        }
-        VerifyList.push(item)
-      }
-    });
-    if (VerifyList.length > 0) {
-      let writeObj = {
-        IPFSHash: Verify.IPFSHash,
-        VerifyList: VerifyList
-      }
-
-      //encrypt JWT key
-      let key = crypto.randomBytes(32)
-      let VJwt = await encryptJWEFile(writeObj, key)
-      // console.log(key.toString('Hex'))
-      const encrypted = await EthCrypto.encryptWithPublicKey(
-        pubkey, //receiver publicKey
-        key.toString('Hex') // message
-      )
-
-      //
-      let exportObj = {
-        jwt: VJwt,
-        decodeMessage: encrypted
-      }
-      const fileData2 = JSON.stringify(exportObj);
-      const blob2 = new Blob([fileData2], { type: "text/plain" });
-
-      if (V_IPFSorDownload) {
-        let cid = await window["ipfsadd"](blob2, true)
-        // console.log(cid)
-        setresult(cid)
-        alert("Verify has been published to IPFS,\n IPFS Hash is " + cid)
-      }
-      else {
-        const url2 = URL.createObjectURL(blob2);
-        const link2 = document.createElement('a');
-        link2.download = 'Verify.json';
-        link2.href = url2;
-        link2.click();
-      }
-    }
-    else {
-      alert("Nothing can share")
-    }
-
-    setShow(false)
-  }
   async function GetfileFromIPFS(ipfsHash) {
     let download = await window["ipfsget"](ipfsHash, true)
     var blob = new Blob(download[0], { type: "text/plain" });
@@ -445,30 +400,6 @@ function Validate(props) {
   function openRawVerifyfile() {
     var newwin = window.open("/raw");
     newwin.document.write("<html><title>raw file</title><body>" + JSON.stringify(Verify) + "</body></html>")
-  }
-
-  function ProveIsReceiver() {
-    if (!Certificate) {
-      alert("please upload verify.json first!")
-      return
-    }
-    let nonce = Math.floor(Math.random() * 1000000)
-    // let location = useLocation();
-    web3.eth.personal.sign(web3.utils.fromUtf8(`I am going to prove myself, one-time nonce: ${nonce}`), accounts[0], (err, sig) => {
-      // console.log(sig)
-      web3.eth.personal.ecRecover(`I am going to prove myself, one-time nonce: ${nonce}`, sig)
-        .then((addr) => {
-          // console.log(addr)
-          if (addr === Certificate.Receiver_address.toLowerCase()) {
-            alert('the signer address is equal to receiver!')
-            //  history.push('/Upload')
-
-          }
-          else {
-            alert('the signer address is not equal to receiver!')
-          }
-        })
-    })
   }
 
   async function decryptJWEFILE(jweObj, key) {
@@ -496,15 +427,22 @@ function Validate(props) {
           </Modal.Header>
 
           <Modal.Body>
-            <PrivateKeyForm Title={"Share Target's publicKey Key"} privatekey={pubkey} setprivatekey={setpubKey} style={{ marginRight: 4 }} />
-            <form className="Uploadform">
-              <label className="password">Shared Verification Publish to IPFS(On)</label>
-              <BootstrapSwitchButton checked={V_IPFSorDownload} onChange={() => { setV_IPFSorDownload(!V_IPFSorDownload) }} onstyle="info" onlabel="IPFS" offlabel="Local" width="100" />
-              <br />
-            </form>
+            {
+              (zkp) ?
+                  Object.keys(zkp).map((key) => {
+                    if(key != "c1" &&key != "c2"&&key != "c3"&&key != "c4")
+                      return <div>{key} : {zkp[key]}</div>
+                    else
+                      return (<>
+                        <div>{key} : {zkp[key][0]},</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{zkp[key][1]}</div>
+                      </>)
+                  })
+                : ""
+            }
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" content='Upload' onClick={GenSelectiveVerification}>Continue Generate Selective Verification</Button>
+            <Button variant="secondary" content='Upload' onClick={uploadZKP}>upload ZKP to smart contract</Button>
           </Modal.Footer>
         </Modal>
         <Row>
@@ -517,30 +455,21 @@ function Validate(props) {
               <Form>
                 <Form.Row>
                   <Col></Col>
-                  <Col xs={1}>
-                    <Button variant="secondary" content='Upload' onClick={doVerification}>Verification</Button>
+                  <Col xs={3}>
+                    <Button variant="secondary" content='Upload' onClick={doVerification}>find valid attribute</Button>
                   </Col>
                   {/* <Col xs={3}>
                     <Button variant="secondary" content='Upload' onClick={() => { setShow(true) }}>Generate Selective Disclosure</Button>
                   </Col> */}
-                  {/* <Col xs={2}>
+                  <Col xs={2}>
                     <Button variant="secondary" content='Upload' onClick={setRule}>Set Rule</Button>
-                  </Col> */}
+                  </Col>
+                  <Col xs={3}>
+                    <Button variant="secondary" content='Upload' onClick={() => { setpriKey("b1d134dbf0c9b98bed1a8c9ebe00e6af0e941d930b246d5948ac90a3075a143b") }}>secret key cheat button</Button>
+                  </Col>
                   <Col></Col>
                 </Form.Row>
                 &nbsp;
-                <Form.Row>
-                <Col></Col>
-                  {(Certificate) ?
-                    <>
-                      <Col xs={3}>
-                        <Button variant="secondary" content='Upload' onClick={CheckSignature}>Check Certificate Issuer's Signature</Button>
-                      </Col>
-                      <Col xs={3}>
-                        <Button variant="secondary" content='Upload' onClick={ProveIsReceiver}>Prove I'm the receiver</Button>
-                      </Col></> : ""}
-                  <Col></Col>
-                </Form.Row>
                 <Form.Row>
                   <Col></Col>
                   <Col xs={4}>
@@ -549,13 +478,14 @@ function Validate(props) {
                   <Col></Col>
                 </Form.Row>
               </Form>
-              <Table responsive={"md"} striped bordered hover size="sm" style={{ width: '95%', margin: "auto", marginTop: "1%" ,wordBreak: 'break-all' }}>
+              <h2>Announced Attributes</h2>
+              <Table responsive={"md"} striped bordered hover size="sm" style={{ width: '95%', margin: "auto", marginTop: "1%", wordBreak: 'break-all' }}>
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>keyhash</th>
                     <th>commitment</th>
-                    <th>AA</th>
+                    <th>random</th>
                   </tr>
                 </thead>
                 <tbody >
@@ -564,15 +494,17 @@ function Validate(props) {
                     {/* name */}
                     <td width="24%">{self.keyhash}</td>
                     {/* type */}
-                    <td width="58%"><div>{self.commitment[0]},</div><div>{self.commitment[1]}</div></td>
+                    <td width="58%"><div>{self.Commitment[0]},</div><div>{self.Commitment[1]}</div></td>
                     {/* hash */}
                     <td width="16%">
-                     {self.AA}
-                      </td>
+                      {self.random}
+                    </td>
                   </tr>)}
                 </tbody>
               </Table>
-              <Table striped bordered hover size="sm" style={{ width: '85%', margin: "auto", marginTop: "1%" }}>
+              <br/>
+              <h2>Voters Verifiable Credentials</h2>
+              <Table striped bordered hover size="sm" style={{ width: '95%', margin: "auto", marginTop: "1%" }}>
                 <thead>
                   <tr>
                     <th>#</th>
@@ -592,7 +524,7 @@ function Validate(props) {
                     <td width="35%">
                       {/* {console.log(index)} */}
                       <Form.Check type="checkbox" disabled checked={self.share} label="match rule" onChange={() => { handleCheckBox(index) }} />
-                      {(self.share)?<Button variant="secondary" content='Upload' onClick={()=>{GenZKP()}}>Gen zkp</Button>:""}
+                      {(self.share) ? <Button variant="secondary" content='Upload' onClick={() => { GenZKP(self) }}>Gen zkp</Button> : ""}
                     </td>
                   </tr>)}
                 </tbody>

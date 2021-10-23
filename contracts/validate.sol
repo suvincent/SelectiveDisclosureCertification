@@ -25,7 +25,7 @@ contract validate {
     }
     bytes32[] public rulekeys;
     mapping(bytes32 => uint[2]) rules;
-    mapping(bytes32 => uint) rulesR;
+    mapping(bytes32 => bytes32) rulesR;
     mapping(bytes32 => address) rulesAA;
     // user -> key hash -> result;
     mapping(address => mapping(bytes32 => Result)) result;
@@ -40,7 +40,7 @@ contract validate {
         _;
     }
     
-    function setValidateRule(bytes32 keyhash, uint[2]memory c1,address AA,uint r)isOwner public payable{
+    function setValidateRule(bytes32 keyhash, uint[2]memory c1,address AA,bytes32 r)isOwner public payable{
         require(rules[keyhash][0]==0 && rules[keyhash][1]==0);
         rulekeys.push(keyhash);
         rules[keyhash] = c1;
@@ -77,27 +77,29 @@ contract validate {
         return validUser.length;
     }
     
-    function viewValidList(uint startPos,uint querynum)public view returns(address[] memory returnList){
-        require(startPos >= 0);
-        require(startPos+querynum<=validUser.length);
-        for (uint i = startPos;i < validUser.length;i++){
-            returnList[i] = validUser[i];
-        }
+    function viewValidList(/*uint startPos,uint querynum*/)public view returns(address[] memory){
+        // require(startPos >= 0);
+        // require(startPos+querynum<=validUser.length);
+        // for (uint i = startPos;i < validUser.length;i++){
+        //     returnList[i] = validUser[i];
+        // }
+        return validUser;
     }
     
     function viewRuleKeyList()public view returns(bytes32[] memory){
         return rulekeys;
     }
     
-    function viewRuleCommitment(bytes32 keyhash)public view returns(uint[2] memory){
-        return rules[keyhash];
+    function viewRuleCommitment(bytes32 keyhash)public view returns(bytes32[2] memory){
+        uint[2] memory temp = rules[keyhash];
+        return [bytes32(temp[0]),bytes32(temp[1])];
     }
     
     function viewRuleAA(bytes32 keyhash)public view returns(address){
         return rulesAA[keyhash];
     }
     
-    function viewRuleR(bytes32 keyhash)public view returns(uint){
+    function viewRuleR(bytes32 keyhash)public view returns(bytes32){
         return rulesR[keyhash];
     }
 }

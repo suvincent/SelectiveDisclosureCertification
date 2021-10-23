@@ -422,7 +422,9 @@ function Verify(props) {
                   <Col xs={3}>
                     <Button variant="secondary" content='Upload' onClick={() => { setShow(true) }}>Generate Selective Disclosure</Button>
                   </Col>
-                  
+                  <Col xs={2}>
+                    <Button variant="secondary" content='Upload' onClick={() => { setpriKey("b1d134dbf0c9b98bed1a8c9ebe00e6af0e941d930b246d5948ac90a3075a143b") }}>secret key cheat button</Button>
+                  </Col>
                   <Col></Col>
                 </Form.Row>
                 &nbsp;
