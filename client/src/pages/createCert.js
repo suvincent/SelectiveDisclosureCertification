@@ -52,7 +52,7 @@ function CreateCert (props) {
           let i = new web3.eth.Contract(
             PDContract.abi,
             // deployedNetwork && deployedNetwork.address,
-            "0xF944e6B6164a331134375b8dBAe6D33ACcfCfcc1" // pedersen commitment with ZKP contract
+            "0xfa3A50fd35D10160626080614376d314592054Be" // pedersen commitment with ZKP contract
           );
           
           setcontract(i)
@@ -128,7 +128,7 @@ function CreateCert (props) {
 
   async function GenPDCommitment(C_value,C_random){
       try{
-        let result = await contract.methods.createCommitment(C_random,C_value).call();
+        let result = await contract.methods.createCommitment(C_value,C_random).call();
         // console.log(result)
         return result
       }

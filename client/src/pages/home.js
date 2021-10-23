@@ -57,10 +57,10 @@ function Home (props) {
 
     async function testReg(){
       // let result = await contract.methods.identityOwner(accounts[0]).call()
-      // console.log(contract)
+      console.log(accounts[0])
       const history = []
       let previousChange = await contract.methods.changed(accounts[0]).call()
-      // console.log(typeof(previousChange))
+      console.log((previousChange))
       while (previousChange) {
         if(previousChange === "0")break
           await contract.getPastEvents('DIDAttributeChanged', {
@@ -83,7 +83,7 @@ function Home (props) {
             }})
       }
       setAttr(attibuteList => history)
-      // console.log(history)
+      console.log(history)
     }
 
     async function TurnRawtoReadable(){

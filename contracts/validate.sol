@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: QQ
 pragma solidity >=0.5.3 <0.7.0;
-pragma experimental ABIEncoderV2;
+// pragma experimental ABIEncoderV2;
 
-import "./PedersenCommitment.sol";
+import "./pedersenCommitment.sol";
 
 contract validate {
     address owner;
-    struct Rule{
-        bytes32 keyhash;
-        uint[2] commitment;
-    }
+    // struct Rule{
+    //     bytes32 keyhash;
+    //     uint[2] commitment;
+    //     address AA;
+    // }
     struct Proof {
         uint[2] c2;
         uint[2] c3;
@@ -22,8 +23,10 @@ contract validate {
         bool result;
         bytes32 verifiableCredential;
     }
-    bytes32[] rulekeys;
+    bytes32[] public rulekeys;
     mapping(bytes32 => uint[2]) rules;
+    mapping(bytes32 => uint) rulesR;
+    mapping(bytes32 => address) rulesAA;
     // user -> key hash -> result;
     mapping(address => mapping(bytes32 => Result)) result;
     mapping(address => bool) pass;
@@ -37,10 +40,12 @@ contract validate {
         _;
     }
     
-    function setValidateRule(bytes32 keyhash, uint[2]memory c1)isOwner public payable{
+    function setValidateRule(bytes32 keyhash, uint[2]memory c1,address AA,uint r)isOwner public payable{
         require(rules[keyhash][0]==0 && rules[keyhash][1]==0);
         rulekeys.push(keyhash);
         rules[keyhash] = c1;
+        rulesR[keyhash] = r;
+        rulesAA[keyhash] = AA;
     }
     
     function checkAllPass(address user) public view returns(bool){
@@ -80,13 +85,19 @@ contract validate {
         }
     }
     
-    function viewRuleList()public view returns(Rule[] memory returnList){
-        for (uint i = 0;i < rulekeys.length;i++){
-            Rule memory temp;
-            temp.keyhash = rulekeys[i];
-            temp.commitment = rules[temp.keyhash];
-            returnList[i] = temp;
-        }
+    function viewRuleKeyList()public view returns(bytes32[] memory){
+        return rulekeys;
     }
     
+    function viewRuleCommitment(bytes32 keyhash)public view returns(uint[2] memory){
+        return rules[keyhash];
+    }
+    
+    function viewRuleAA(bytes32 keyhash)public view returns(address){
+        return rulesAA[keyhash];
+    }
+    
+    function viewRuleR(bytes32 keyhash)public view returns(uint){
+        return rulesR[keyhash];
+    }
 }

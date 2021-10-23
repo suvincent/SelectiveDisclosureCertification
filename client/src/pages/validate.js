@@ -5,8 +5,10 @@ import EthCrypto from 'eth-crypto';
 import { Button, Container, Row, Col, Form, Table, Badge, Modal } from 'react-bootstrap'
 import "../App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ValidateContract from "../contracts/validate.json";
 import PDContract from "../contracts/PedersenCommitment.json";
 import row from "../model/row"
+import zkpClass from '../model/zkp'
 import testAdd from '../test/ipfs'
 import PrivateKeyForm from '../components/privatekey'
 import BootstrapSwitchButton from 'bootstrap-switch-button-react'
@@ -20,9 +22,11 @@ function Validate(props) {
   const [web3,] = useState(props.web3)
   const [accounts, setaccount] = useState(null)
   const [contract, setcontract] = useState(null)
+  const [vcontract, setvcontract] = useState(null)
   const [Certificate, setCert] = useState(null)
   const [Verify, setVerify] = useState(null)
   const [filelist, setfilelist] = useState([])
+  const [rules, setrules] = useState([])
   const [VerifyCount, setVerifyCount] = useState(0)
   const [CertCount, setCertCount] = useState(0)
   const [type, setType] = useState(0)
@@ -35,7 +39,7 @@ function Validate(props) {
   const [V_IPFSHash, setV_IPFSHash] = useState("");
   // const [readObj,setReadObj] = useState(null)
   const [result, setresult] = useState("")
-
+  const [zkp, setzkp] = useState(null)
 
 
   // type : 0 => IPFS
@@ -55,17 +59,28 @@ function Validate(props) {
         if (!accounts) setaccount(await web3.eth.getAccounts());
         // Get the contract instance.
         // const networkId = await web3.eth.net.getId();
-        // console.log(networkId)
-        // const deployedNetwork = PDContract.networks[networkId];
         if (!contract) {
           let i = new web3.eth.Contract(
             PDContract.abi,
             // deployedNetwork && deployedNetwork.address,
-            "0xF944e6B6164a331134375b8dBAe6D33ACcfCfcc1"
+            "0xfa3A50fd35D10160626080614376d314592054Be"
           );// 0x4CF247a90956185559EE5fb2A9A7E8dDd8A8E985 Drive address
 
           setcontract(i)
         }
+
+        if (!vcontract) {
+          let i = new web3.eth.Contract(
+            ValidateContract.abi,
+            // deployedNetwork && deployedNetwork.address,
+            "0x87fd310B48B877F64a143066b7e3574AF3086e25"
+          );// 0x4CF247a90956185559EE5fb2A9A7E8dDd8A8E985 Drive address
+
+          setvcontract(i)
+        }else{
+          getRuleList()
+        }
+        
       } catch (error) {
         // Catch any errors for any of the above operations.
         alert(
@@ -75,8 +90,92 @@ function Validate(props) {
       }
     }
     fetchData()//.then(runExample())
-  });
+  },[vcontract]);
 
+  /////////////////////////
+  // function for validate
+  async function getRuleList(){
+    setrules([])
+    let list = await vcontract.methods.viewRuleKeyList().call()
+    list.forEach(async (item)=>{
+      let c = await vcontract.methods.viewRuleCommitment(item).call();
+      let aa = await vcontract.methods.viewRuleAA(item).call();
+      let unit = {
+        keyhash:item,
+        commitment:c,
+        AA:aa
+      }
+      setrules(rules => [...rules,unit])
+    })
+  }
+
+  async function setRule(){
+    // department ISA
+    let k = '0x2ad29f65743a0524d916bfb3e24f5034c970b8daa7749699a88bd7096129fa09'
+    // let v =  ['93893333498284964916663551760241003010973516130047008545734383195150556334586', '10212880543627124451263322212501609168127783391104343410317611617970773674950'] 
+    let v = ['0x31eb8384f1d5654e48e14ff5e7828be2cb5838713355a37a414f666f417a825f', '0x8965fe515c72bdcaa3d47d24f736f83d70e95b91a51084166fcb208a7310ceda']
+    try{
+      await vcontract.methods.setValidateRule(k,v,"0x097F783e11482f5d05753c9619424171E8E8B3f6").send({ from: accounts[0] });
+    }
+    catch(e){
+      console.log(e.message)
+    }
+    
+  }
+
+  function containsRule(keyhash){
+    let flag = false;
+    rules.forEach((item)=>{
+      // console.log(item)
+      // console.log(keyhash)
+      if(item.keyhash == keyhash && !flag){
+        flag = true;
+      }
+    })
+    return flag
+  }
+
+  function findRule(keyhash){
+    let flag = false;
+    rules.forEach((item)=>{
+      // console.log(item)
+      // console.log(keyhash)
+      if(item.keyhash == keyhash && !flag){
+        flag = item.commitment;
+      }
+    })
+    return flag
+  }
+
+  function generateHexString(length) {
+    var ret = "";
+    while (ret.length < length) {
+      ret += Math.random().toString(16).substring(2);
+    }
+    return ret.substring(0,length);
+  }
+
+  async function GenZKP(keyhash,c2,m,r1,r2){
+    let c1 = findRule(keyhash);
+    let r3 ="0x"+ generateHexString(58)
+    let r4 ="0x"+ generateHexString(58)
+    let r5 ="0x"+ generateHexString(58)
+    try{
+      let c3 = await contract.methods.createCommitment(r3,r4).call();
+      let c4 = await contract.methods.createCommitment(r3,r5).call();
+      let c  = await contract.methods.hashall(c1,c2,c3,c4).call();
+      let z1 = await contract.methods.createZ(c,m,r3);
+      let z2 = await contract.methods.createZ(c,r1,r4);
+      let z3 = await contract.methods.createZ(c,r2,r5);
+      let zkp = new zkpClass(c1,c2,c3,c4,c,z1,z2,z3)
+      console.log(zkp)
+      setzkp(zkp);
+      setShow(true)
+    }catch(e){
+      console.log(e.message)
+    }
+  }
+  /////////////////////////
   // function OK
   function captureCertFile(event) {
     event.stopPropagation()
@@ -188,10 +287,12 @@ function Validate(props) {
       // console.log(element)
       let key = "0x" + CryptoJS.SHA256(element.key).toString()
       // console.log(mapping[key])
+      // console.log(key)
       let result = await VerifyCommitment(mapping[key], "0x" + CryptoJS.SHA256(element.key + ":" + element.value).toString(), element.random)
       // console.log(result)
       if (result) {
-        var r = new row(element.key, element.value, element.random, mapping[key], typeof element.value);
+        let share = containsRule(key)?true:false;
+        var r = new row(element.key, element.value, element.random, mapping[key], typeof element.value,share);
         setfilelist(arr => [...arr, r]);
       }
       else {
@@ -389,7 +490,7 @@ function Validate(props) {
       <Container fluid style={{ paddingLeft: 0, paddingRight: 0 }}>
         {/* <Header></Header> */}
 
-        <Modal show={show} onHide={() => { setShow(false) }}>
+        <Modal show={show} onHide={() => { setShow(false) }} size="lg">
           <Modal.Header closeButton>
             <Modal.Title>Let's Encrypted for your sharing target</Modal.Title>
           </Modal.Header>
@@ -419,10 +520,12 @@ function Validate(props) {
                   <Col xs={1}>
                     <Button variant="secondary" content='Upload' onClick={doVerification}>Verification</Button>
                   </Col>
-                  <Col xs={3}>
+                  {/* <Col xs={3}>
                     <Button variant="secondary" content='Upload' onClick={() => { setShow(true) }}>Generate Selective Disclosure</Button>
-                  </Col>
-                  
+                  </Col> */}
+                  {/* <Col xs={2}>
+                    <Button variant="secondary" content='Upload' onClick={setRule}>Set Rule</Button>
+                  </Col> */}
                   <Col></Col>
                 </Form.Row>
                 &nbsp;
@@ -446,11 +549,34 @@ function Validate(props) {
                   <Col></Col>
                 </Form.Row>
               </Form>
+              <Table responsive={"md"} striped bordered hover size="sm" style={{ width: '95%', margin: "auto", marginTop: "1%" ,wordBreak: 'break-all' }}>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>keyhash</th>
+                    <th>commitment</th>
+                    <th>AA</th>
+                  </tr>
+                </thead>
+                <tbody >
+                  {rules.map((self, index) => <tr key={index}>
+                    <td width="3%">{index}</td>
+                    {/* name */}
+                    <td width="24%">{self.keyhash}</td>
+                    {/* type */}
+                    <td width="58%"><div>{self.commitment[0]},</div><div>{self.commitment[1]}</div></td>
+                    {/* hash */}
+                    <td width="16%">
+                     {self.AA}
+                      </td>
+                  </tr>)}
+                </tbody>
+              </Table>
               <Table striped bordered hover size="sm" style={{ width: '85%', margin: "auto", marginTop: "1%" }}>
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>key</th>
+                    <th>keyhash</th>
                     <th>value</th>
                     <th>Verification</th>
                   </tr>
@@ -459,13 +585,15 @@ function Validate(props) {
                   {filelist.map((self, index) => <tr key={index}>
                     <td width="3%">{index}</td>
                     {/* name */}
-                    <td>{self.key}</td>
+                    <td>{"0x" + CryptoJS.SHA256(self.key).toString()}</td>
                     {/* type */}
-                    <td>{self.value}</td>
+                    <td>{self.key}:{self.value}</td>
                     {/* hash */}
                     <td width="35%">
                       {/* {console.log(index)} */}
-                      <Form.Check type="checkbox" checked={self.share} label="Allow to Share" onChange={() => { handleCheckBox(index) }} /></td>
+                      <Form.Check type="checkbox" disabled checked={self.share} label="match rule" onChange={() => { handleCheckBox(index) }} />
+                      {(self.share)?<Button variant="secondary" content='Upload' onClick={()=>{GenZKP()}}>Gen zkp</Button>:""}
+                    </td>
                   </tr>)}
                 </tbody>
               </Table>

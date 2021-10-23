@@ -61,7 +61,7 @@ function Verify(props) {
           let i = new web3.eth.Contract(
             PDContract.abi,
             // deployedNetwork && deployedNetwork.address,
-            "0xF944e6B6164a331134375b8dBAe6D33ACcfCfcc1"
+            "0xfa3A50fd35D10160626080614376d314592054Be"
           );// 0x4CF247a90956185559EE5fb2A9A7E8dDd8A8E985 Drive address
 
           setcontract(i)

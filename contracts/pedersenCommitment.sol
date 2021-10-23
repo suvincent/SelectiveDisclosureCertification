@@ -20,37 +20,38 @@ contract PedersenCommitment{
     uint constant nn = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     
       // Expects random factor 'r' and commitment 'b'. Generators are hard-coded into this contract.
-    function createCommitment(uint r, uint b)public pure returns (uint[2] memory c_affine){
+    function createCommitment(uint r, uint b)public pure returns (bytes32[2] memory c_affine_bytes){
       uint[2] memory bG;
       (bG[0],bG[1]) =  EllipticCurve.ecMul(b,Gx,Gy,AA,PP); 
       //uint[3] memory bG = Secp256k1_noconflict._mul(b,G);
       uint[2] memory rY ;
       (rY[0],rY[1])= EllipticCurve.ecMul(r,Yx,Yy,AA,PP); 
       //uint[3] memory rY = Secp256k1_noconflict._mul(r,Y);
+      uint[2] memory c_affine;
       (c_affine[0],c_affine[1])=  EllipticCurve.ecAdd(bG[0],bG[1],rY[0],rY[1],AA,PP);
       //uint[3] memory c = Secp256k1_noconflict._add(bG,rY);
 
       // Sanity check that everything worked as expected.
       require(EllipticCurve.isOnCurve(c_affine[0],c_affine[1],AA,BB,PP),"Must be on the curve!");
 
-      return c_affine;
+      c_affine_bytes = [bytes32(c_affine[0]),bytes32(c_affine[1])];
     }
     
     // We need to re-create the commitment and check that it matches c.
     function openCommitment(uint[2] memory c, uint r, uint b)public pure returns (bool) {
 
-      uint[2] memory c_computed = createCommitment(r,b);
+      bytes32[2] memory c_computed = createCommitment(r,b);
 
       // Check that the commitments match...
-      if(c[0] == c_computed[0] && c[1] == c_computed[1]) {
+      if(c[0] == uint(c_computed[0]) && c[1] == uint(c_computed[1])) {
         return true;
       }
 
       return false;
     }
     
-    function createZ(bytes32 c, bytes32 m, uint r)public pure returns (uint z){
-        return addmod(mulmod(uint(c),uint(m),nn),r,nn);
+    function createZ(bytes32 c, bytes32 m, uint r)public pure returns (bytes32){
+        return bytes32(addmod(mulmod(uint(c),uint(m),nn),r,nn));
         // return uint(c)*uint(m) + r;
     }
     
@@ -75,8 +76,8 @@ contract PedersenCommitment{
     }
     
     function checkSame(uint[2] memory c1,uint[2] memory c3,uint c, uint z1,uint z2)public pure returns(bool){
-        uint[2] memory p1 = createCheckFromCommitment(c1,c3,uint(c));
-        uint[2] memory p2 = createCommitment(z1,z2);
+        bytes32[2] memory p1 = createCheckFromCommitment(c1,c3,uint(c));
+        bytes32[2] memory p2 = createCommitment(z1,z2);
         if(p1[0] == p2[0] && p1[1] == p2[1]){
             return true;
         }
@@ -84,13 +85,15 @@ contract PedersenCommitment{
     }
     
     // C3 + c*C1 => P1 
-    function createCheckFromCommitment(uint[2] memory c1,uint[2] memory c3, uint scalar)public pure returns(uint[2] memory result){
+    function createCheckFromCommitment(uint[2] memory c1,uint[2] memory c3, uint scalar)public pure returns(bytes32[2] memory result_bytes){
         uint[2] memory p1;
         // c * c1
         (p1[0],p1[1]) = EllipticCurve.ecMul(scalar,c1[0],c1[1],AA,PP);
         // C3 + c*C1 => P1 
+        uint[2] memory result;
         (result[0],result[1]) = EllipticCurve.ecAdd(c3[0],c3[1],p1[0],p1[1],AA,PP);
         require(EllipticCurve.isOnCurve(result[0],result[1],AA,BB,PP),"Must be on the curve!");
+        result_bytes = [bytes32(result[0]),bytes32(result[1])];
     }
     
 }
