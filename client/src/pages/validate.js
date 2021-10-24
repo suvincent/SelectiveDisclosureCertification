@@ -33,6 +33,7 @@ function Validate(props) {
   const [CertCount, setCertCount] = useState(0)
   const [type, setType] = useState(0)
   const [show, setShow] = useState(false)
+  const [show2, setShow2] = useState(false)
   // const [modalType,setModal] = useState(0)
   const [prikey, setpriKey] = useState("")
   const [pubkey, setpubKey] = useState("")
@@ -75,7 +76,7 @@ function Validate(props) {
           let i = new web3.eth.Contract(
             ValidateContract.abi,
             // deployedNetwork && deployedNetwork.address,
-            "0x1570518984b9e5977FD23f36A4fC64747C4ba21f"
+            "0x8e7F86C1832A534AdDA17F9c92CCc5D2c8bea302"
           );// 0x4CF247a90956185559EE5fb2A9A7E8dDd8A8E985 Drive address
 
           setvcontract(i)
@@ -102,6 +103,7 @@ function Validate(props) {
       setValidList([])
       let list = await vcontract.methods.viewValidList().call()
       setValidList(ValidList =>[...ValidList, list])
+      setShow2(true)
     }catch(e){
       console.log(e.message)
     }
@@ -423,14 +425,16 @@ function Validate(props) {
 
         <Modal show={show} onHide={() => { setShow(false) }} size="lg">
           <Modal.Header closeButton>
-            <Modal.Title>Let's Encrypted for your sharing target</Modal.Title>
+            <Modal.Title>materials for a pedersen commitment equality proof</Modal.Title>
           </Modal.Header>
 
           <Modal.Body>
             {
               (zkp) ?
                   Object.keys(zkp).map((key) => {
-                    if(key != "c1" &&key != "c2"&&key != "c3"&&key != "c4")
+                    if(key == "m")
+                      return <></>
+                    else if(key != "c1" &&key != "c2"&&key != "c3"&&key != "c4")
                       return <div>{key} : {zkp[key]}</div>
                     else
                       return (<>
@@ -443,6 +447,35 @@ function Validate(props) {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" content='Upload' onClick={uploadZKP}>upload ZKP to smart contract</Button>
+          </Modal.Footer>
+        </Modal>
+        <Modal show={show2} onHide={() => { setShow2(false) }} size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>Valid List</Modal.Title>
+          </Modal.Header>
+
+          <Modal.Body>
+          <Table responsive={"md"} striped bordered hover size="sm" style={{ width: '95%', margin: "auto", marginTop: "1%", wordBreak: 'break-all' }}>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>valid user address</th>
+                  </tr>
+                </thead>
+                <tbody >
+            {ValidList.map((unit,index)=>
+                  <>
+                  <tr>
+                    <td>{index}</td>
+                    <td>{unit}</td>
+                  </tr>
+                  </>
+            )}
+            </tbody>
+            </Table>
+          </Modal.Body>
+          <Modal.Footer>
+            {/* <Button variant="secondary" content='Upload' onClick={uploadZKP}>upload ZKP to smart contract</Button> */}
           </Modal.Footer>
         </Modal>
         <Row>
@@ -463,6 +496,9 @@ function Validate(props) {
                   </Col> */}
                   <Col xs={2}>
                     <Button variant="secondary" content='Upload' onClick={setRule}>Set Rule</Button>
+                  </Col>
+                  <Col xs={2}>
+                    <Button variant="secondary" content='Upload' onClick={allValidUsers}>See Valid List</Button>
                   </Col>
                   <Col xs={3}>
                     <Button variant="secondary" content='Upload' onClick={() => { setpriKey("b1d134dbf0c9b98bed1a8c9ebe00e6af0e941d930b246d5948ac90a3075a143b") }}>secret key cheat button</Button>

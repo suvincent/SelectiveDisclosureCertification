@@ -4,6 +4,7 @@ import {Button,Container,Row,Col,Table,Form} from 'react-bootstrap'
 import "../App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import testAdd from '../test/ipfs'
+import getDidDoc from "../components/Did-Document";
 
 import bs58 from 'bs58'
 // import CryptoJS from "cryptojs"
@@ -54,6 +55,18 @@ function Home (props) {
       }
       fetchData()//.then(runExample())
     });
+
+    function getDid(addr){
+      return 'did:ethr:0x4:'+ addr
+    }
+
+    async function openRawDID(addr){
+      var newwin = window.open("/raw");
+      let did = getDid(addr)
+      let doc = await getDidDoc(did);
+      console.log(did)
+      newwin.document.write("<html><title>raw file</title><body><textarea rows='30' cols='100'>"+(JSON.stringify(doc,undefined, 4))+"</textarea></body></html>")
+    }
 
     async function testReg(){
       // let result = await contract.methods.identityOwner(accounts[0]).call()
@@ -212,7 +225,7 @@ function Home (props) {
                   <h2>Home</h2>
             <br/>
             <h4>uPort Registry</h4>
-            <h4>current account : {(accounts)?accounts[0]:""}</h4>
+            <h4>current account : {(accounts)?<>{accounts[0]} <Button variant="secondary" onClick={()=>{openRawDID(accounts[0])}}>did-document</Button></>:""}</h4>
             <br/>
             <Button variant="secondary" content='Upload' onClick = {testReg}>Get raw Attributes</Button>
             &nbsp;
