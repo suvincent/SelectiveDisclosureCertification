@@ -76,7 +76,7 @@ function Validate(props) {
           let i = new web3.eth.Contract(
             ValidateContract.abi,
             // deployedNetwork && deployedNetwork.address,
-            "0x8e7F86C1832A534AdDA17F9c92CCc5D2c8bea302"
+            "0x742997e2eA4dCFb5dA05A90fAB8df41d89aC1749"
           );// 0x4CF247a90956185559EE5fb2A9A7E8dDd8A8E985 Drive address
 
           setvcontract(i)
